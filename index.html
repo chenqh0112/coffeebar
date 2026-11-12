@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>子午咖啡 · 点单</title>
+<style>
+:root{
+  --paper:      #f8f6f2;
+  --surface:    #fefdfb;
+  --surface-2:  #f3efe9;
+  --ink:        #201712;
+  --ink-2:      #635a53;
+  --ink-3:      #938c86;
+  --line:       #e0dcd5;
+  --line-2:     #ccc4bc;
+  --accent:     #9a4914;
+  --accent-soft:#fbe7da;
+  --olive:      #356447;
+  --danger:     #b33736;
+  --r-card: 10px;
+  --r-ctl: 7px;
+  --sh-1: 0 1px 2px rgba(29,20,13,0.05), 0 6px 18px rgba(29,20,13,0.045);
+  --sh-2: 0 2px 6px rgba(29,20,13,0.07), 0 14px 34px rgba(29,20,13,0.09);
+  --ease: cubic-bezier(.2,.7,.3,1);
+  --t: 180ms;
+  --font-ui: "Roboto Flex", "Roboto", "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-serif: "Newsreader", "Noto Serif CJK SC", "Songti SC", "Noto Serif SC", Georgia, serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:#E9E7E3;color:var(--ink);font-family:var(--font-ui);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+svg{display:block}
+.icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+
+/* ---------- APP 骨架 ---------- */
+.app{width:100%;height:100%;display:flex;flex-direction:column;background:var(--paper);position:relative;overflow:hidden;font-size:14px}
+.topbar{height:66px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--line);background:var(--surface)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:36px;height:36px;border-radius:9px;background:var(--ink);color:var(--paper);display:grid;place-items:center;flex:none}
+.brand-mark .icon{width:20px;height:20px}
+.brand-cn{font-family:var(--font-serif);font-size:19px;font-weight:600;letter-spacing:.08em;line-height:1.1}
+.brand-en{font-size:9px;letter-spacing:.16em;color:var(--ink-3);margin-top:4px;white-space:nowrap}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.clock{text-align:right;line-height:1.15}
+.clock-time{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em;display:block}
+.clock-date{font-size:10px;color:var(--ink-3);letter-spacing:.05em}
+.icon-btn{width:36px;height:36px;border:1px solid var(--line);border-radius:var(--r-ctl);display:grid;place-items:center;color:var(--ink-2);transition:background var(--t) var(--ease),color var(--t) var(--ease),border-color var(--t) var(--ease)}
+.icon-btn:hover{background:var(--surface-2);color:var(--ink);border-color:var(--line-2)}
+
+.body{flex:1;min-height:0;display:grid}
+.app[data-orient="landscape"] .body{grid-template-columns:196px minmax(0,1fr) 336px}
+.app[data-orient="portrait"]  .body{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+
+/* 分类导航 */
+.cats{border-right:1px solid var(--line);background:var(--surface);overflow:auto;padding:18px 12px}
+.cat-btn{width:100%;display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:var(--r-ctl);text-align:left;color:var(--ink-2);margin-bottom:3px;transition:background var(--t) var(--ease),color var(--t) var(--ease)}
+.cat-btn:hover{background:var(--surface-2)}
+.cat-btn.on{background:var(--ink);color:var(--paper)}
+.cat-no{font-size:10px;letter-spacing:.06em;font-variant-numeric:tabular-nums;opacity:.55;width:18px;flex:none}
+.cat-cn{font-size:13.5px;font-weight:600;flex:1;white-space:nowrap}
+.cat-en{font-size:8.5px;letter-spacing:.09em;opacity:.5;white-space:nowrap}
+.app[data-orient="portrait"] .cats{display:flex;gap:8px;padding:12px 18px;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto;flex:none}
+.app[data-orient="portrait"] .cat-btn{width:auto;flex:none;margin:0;padding:9px 13px;gap:8px;border:1px solid var(--line);background:var(--surface)}
+.app[data-orient="portrait"] .cat-btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.app[data-orient="portrait"] .cat-en{display:none}
+.app[data-orient="portrait"] .cat-no{width:auto}
+
+/* 品种区 */
+.menu{min-width:0;overflow:auto;padding:24px 26px 40px}
+.app[data-orient="portrait"] .menu{padding:22px 20px 104px}
+.menu-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;padding-bottom:15px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:10px;letter-spacing:.18em;color:var(--accent);font-weight:600}
+.menu-title{font-family:var(--font-serif);font-size:28px;font-weight:600;margin:6px 0 0;letter-spacing:.02em;line-height:1.1}
+.menu-count{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;padding-bottom:3px}
+.menu-grid{display:grid;gap:12px;grid-template-columns:1fr}
+.app[data-orient="landscape"] .menu-grid{grid-template-columns:repeat(auto-fill,minmax(268px,1fr))}
+.item{display:flex;align-items:flex-start;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:16px;box-shadow:var(--sh-1);transition:transform var(--t) var(--ease),box-shadow var(--t) var(--ease),border-color var(--t) var(--ease)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.item:hover{transform:translateY(-2px);box-shadow:var(--sh-2);border-color:var(--line-2)}
+.item-no{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums;letter-spacing:.04em;padding-top:3px;width:22px;flex:none}
+.item-main{flex:1;min-width:0}
+.item-name{font-size:15px;font-weight:600;letter-spacing:.01em;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.item-en{font-size:11px;font-weight:400;color:var(--ink-3);letter-spacing:.04em;font-family:var(--font-serif);font-style:italic}
+.item-desc{font-size:11.5px;line-height:1.65;color:var(--ink-2);margin:7px 0 0}
+.item-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.tag{font-size:10px;padding:3px 7px;border:1px solid var(--line);border-radius:4px;color:var(--ink-2);background:var(--paper);white-space:nowrap}
+.tag-cat{background:var(--surface-2);border-color:var(--line-2);color:var(--ink-2);font-weight:600}
+.add-btn{width:34px;height:34px;flex:none;border-radius:var(--r-ctl);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--ink);background:var(--surface);transition:background var(--t) var(--ease),color var(--t) var(--ease),transform var(--t) var(--ease),border-color var(--t) var(--ease)}
+.add-btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink);transform:scale(1.06)}
+.add-btn .icon{width:17px;height:17px}
+
+/* 点单记录面板 */
+.order-panel{background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.op-handle{display:none}
+.op-head{padding:20px 20px 15px;border-bottom:1px solid var(--line);flex:none}
+.op-eyebrow{font-size:10px;letter-spacing:.18em;color:var(--accent);font-weight:600}
+.op-title{display:flex;align-items:center;justify-content:space-between;margin-top:7px}
+.op-title h2{font-family:var(--font-serif);font-size:21px;margin:0;font-weight:600}
+.badge{min-width:26px;height:26px;padding:0 7px;border-radius:var(--r-ctl);background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.op-close{display:none}
+.op-table{padding:13px 20px 12px;flex:none;border-bottom:1px solid var(--line)}
+.field-label{font-size:10px;letter-spacing:.1em;color:var(--ink-3);text-transform:uppercase;margin-bottom:7px}
+.input{width:100%;height:36px;border:1px solid var(--line);background:var(--paper);border-radius:var(--r-ctl);padding:0 11px;font-size:12.5px;outline:none;transition:border-color var(--t) var(--ease),box-shadow var(--t) var(--ease)}
+.input::placeholder{color:var(--ink-3)}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.op-list{flex:1;min-height:0;overflow:auto;padding:4px 20px}
+.log-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);animation:rise 220ms var(--ease) both}
+.log-no{font-size:10px;color:var(--ink-3);width:20px;padding-top:2px;font-variant-numeric:tabular-nums;flex:none}
+.log-body{flex:1;min-width:0}
+.log-name{font-size:13.5px;font-weight:600}
+.log-spec{font-size:11px;color:var(--ink-3);margin-top:4px}
+.log-note{font-size:11px;color:var(--ink-2);margin-top:6px;font-style:italic;line-height:1.5}
+.log-ctrl{display:flex;align-items:center;gap:8px;margin-top:10px}
+.qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:var(--r-ctl);overflow:hidden;height:28px}
+.qty button{width:26px;height:26px;display:grid;place-items:center;color:var(--ink-2);transition:background var(--t) var(--ease)}
+.qty button:hover{background:var(--surface-2)}
+.qty .icon{width:13px;height:13px}
+.qty span{min-width:24px;text-align:center;font-size:12px;font-variant-numeric:tabular-nums}
+.qty-lg{height:38px}
+.qty-lg button{width:38px;height:36px}
+.qty-lg span{min-width:42px;font-size:14px;font-weight:600}
+.log-del{width:28px;height:28px;display:grid;place-items:center;color:var(--ink-3);margin-left:auto;border-radius:var(--r-ctl);transition:color var(--t) var(--ease),background var(--t) var(--ease)}
+.log-del:hover{color:var(--danger);background:var(--surface-2)}
+.log-del .icon{width:15px;height:15px}
+.empty{height:100%;min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--ink-3);gap:12px;padding:20px}
+.empty .icon{width:34px;height:34px;opacity:.45}
+.empty p{font-size:12px;line-height:1.8;margin:0}
+.op-foot{border-top:1px solid var(--line);padding:15px 20px 20px;flex:none;background:var(--surface)}
+.summary{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.summary span{font-size:11.5px;color:var(--ink-3)}
+.summary strong{font-size:23px;font-family:var(--font-serif);font-variant-numeric:tabular-nums;font-weight:600}
+.summary em{font-size:11px;color:var(--ink-3);font-style:normal;margin-left:4px}
+.btn-row{display:flex;gap:8px}
+.btn{height:40px;border-radius:var(--r-ctl);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;font-weight:600;transition:background var(--t) var(--ease),color var(--t) var(--ease),border-color var(--t) var(--ease),transform var(--t) var(--ease)}
+.btn:active{transform:scale(.985)}
+.btn-ghost{width:88px;flex:none;border:1px solid var(--line);color:var(--ink-2)}
+.btn-ghost:hover{background:var(--surface-2);border-color:var(--line-2)}
+.btn-primary{flex:1;background:var(--ink);color:var(--paper)}
+.btn-primary:hover{background:var(--accent)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;background:var(--ink)}
+.disclaimer{font-size:10px;color:var(--ink-3);margin-top:11px;display:flex;gap:6px;align-items:flex-start;line-height:1.5}
+.disclaimer .icon{width:13px;height:13px;margin-top:1px}
+
+/* 竖屏：底部 dock + 抽屉 */
+.dock{display:none}
+.app[data-orient="portrait"] .dock{display:flex;position:absolute;left:16px;right:16px;bottom:16px;z-index:20;height:58px;background:var(--ink);color:var(--paper);border-radius:var(--r-card);box-shadow:0 10px 30px rgba(0,0,0,.22);align-items:center;padding:0 16px;gap:12px;transition:background var(--t) var(--ease)}
+.app[data-orient="portrait"] .dock:hover{background:#2C2D30}
+.dock .icon{width:18px;height:18px}
+.dock-label{font-size:13px;font-weight:600;flex:1;text-align:left;line-height:1.3}
+.dock-sub{font-size:10.5px;opacity:.6;font-weight:400;display:block;margin-top:2px}
+.dock-arrow{opacity:.6}
+.app[data-orient="portrait"] .order-panel{position:absolute;z-index:40;left:0;right:0;bottom:0;height:78%;border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -16px 44px rgba(0,0,0,.16);transform:translateY(102%);transition:transform 280ms var(--ease)}
+.app.panel-open[data-orient="portrait"] .order-panel{transform:none}
+.app[data-orient="portrait"] .op-handle{display:block;width:36px;height:4px;border-radius:2px;background:var(--line-2);margin:10px auto 0}
+.app[data-orient="portrait"] .op-head{padding-top:10px}
+.app[data-orient="portrait"] .op-close{display:grid}
+.scrim{position:absolute;inset:0;background:rgba(22,20,18,.38);opacity:0;pointer-events:none;transition:opacity 220ms var(--ease);z-index:30}
+.app.panel-open[data-orient="portrait"] .scrim,.app.modal-open .scrim{opacity:1;pointer-events:auto}
+
+/* 模态层 */
+.modal-layer{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:24px}
+.app.modal-open .modal-layer{display:flex}
+.modal{display:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.22);width:min(460px,100%);max-height:88%;flex-direction:column;overflow:hidden;animation:pop 220ms var(--ease)}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+.modal-layer[data-view="spec"]    #modalSpec,
+.modal-layer[data-view="history"] #modalHistory,
+.modal-layer[data-view="done"]    #modalDone{display:flex}
+#modalHistory{width:min(520px,100%)}
+.modal-head{padding:20px 22px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex:none}
+.modal-head h3{font-family:var(--font-serif);font-size:22px;margin:6px 0 0;font-weight:600;line-height:1.15}
+.modal-head .sub{font-size:11px;color:var(--ink-3);margin-top:5px;letter-spacing:.03em}
+.modal-body{padding:20px 22px;overflow:auto;min-height:0}
+.modal-foot{padding:14px 22px 20px;border-top:1px solid var(--line);display:flex;gap:10px;flex:none}
+.modal-foot .btn{flex:1}
+.opt-group{margin-bottom:18px}
+.opt-group:last-child{margin-bottom:0}
+.opt-label{font-size:11px;font-weight:600;letter-spacing:.06em;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.opt-label span{font-size:10px;color:var(--ink-3);font-weight:400;letter-spacing:0}
+.seg-opts{display:flex;gap:8px;flex-wrap:wrap}
+.opt{padding:9px 16px;border:1px solid var(--line);border-radius:var(--r-ctl);font-size:12.5px;color:var(--ink-2);background:var(--paper);transition:background var(--t) var(--ease),border-color var(--t) var(--ease),color var(--t) var(--ease)}
+.opt:hover{border-color:var(--line-2)}
+.opt.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+.no-opt{font-size:11.5px;color:var(--ink-3);background:var(--paper);border:1px dashed var(--line-2);border-radius:var(--r-ctl);padding:11px 13px;line-height:1.6}
+.hist-item{border:1px solid var(--line);border-radius:var(--r-card);padding:14px;margin-bottom:10px}
+.hist-item:last-child{margin-bottom:0}
+.hist-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.hist-no{font-family:var(--font-serif);font-size:17px;font-weight:600;letter-spacing:.04em}
+.hist-time{font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.hist-meta{font-size:10.5px;color:var(--ink-3);margin-top:5px}
+.hist-lines{margin-top:10px;font-size:11.5px;color:var(--ink-2);line-height:1.9;border-top:1px dashed var(--line);padding-top:9px}
+.hist-lines b{color:var(--ink);font-weight:600}
+.done-hero{text-align:center;padding:28px 22px 20px;border-bottom:1px solid var(--line)}
+.done-hero .icon{width:38px;height:38px;margin:0 auto 12px;color:var(--olive)}
+.done-no{font-family:var(--font-serif);font-size:34px;letter-spacing:.08em;font-weight:600}
+.done-sub{font-size:11px;color:var(--ink-3);margin-top:7px}
+.done-body{padding:18px 22px;overflow:auto;min-height:0}
+.done-row{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:8px 0;border-bottom:1px solid var(--line);line-height:1.5}
+.done-row span:last-child{color:var(--ink-3);white-space:nowrap;font-variant-numeric:tabular-nums}
+.done-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;font-size:12px;color:var(--ink-2)}
+.done-total strong{font-family:var(--font-serif);font-size:22px;color:var(--ink)}
+.note-box{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-ctl);padding:11px 12px;font-size:10.5px;color:var(--ink-2);line-height:1.6;display:flex;gap:8px}
+.note-box .icon{width:14px;height:14px;margin-top:1px;color:var(--accent)}
+.toast{position:absolute;left:50%;bottom:88px;transform:translate(-50%,12px);background:var(--ink);color:var(--paper);padding:10px 15px;border-radius:var(--r-ctl);font-size:12px;display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;transition:opacity var(--t) var(--ease),transform var(--t) var(--ease);z-index:80;box-shadow:var(--sh-2);white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast .icon{width:15px;height:15px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+
+/* ===== 真机运行覆盖（由 tools/prepare.py 注入；颜色已降级为 sRGB） ===== */
+html,body{width:100%;height:100%;overflow:hidden;margin:0;padding:0;background:var(--paper);
+  -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+input{-webkit-user-select:text;user-select:text}
+.app{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;font-size:15px;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-cup" viewBox="0 0 24 24"><path d="M6 2v2M10 2v2M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h12Z"/><path d="M17 9h1a3 3 0 0 1 0 6h-1"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h4"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-portrait" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></symbol>
+  <symbol id="i-landscape" viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="2"/><path d="M19 12h.01"/></symbol>
+  <symbol id="i-bean" viewBox="0 0 24 24"><path d="M16.5 3.5C13 3 8 6 5.5 10.5S5 18.5 8 20.5s7.5-1 10-5.5S20 4 16.5 3.5Z"/><path d="M8 20.5C10 15 12 9 16.5 3.5"/></symbol>
+</svg>
+
+<div class="app" id="app" data-orient="landscape">
+
+          <header class="topbar">
+            <div class="brand">
+              <span class="brand-mark"><svg class="icon"><use href="#i-cup"/></svg></span>
+              <div>
+                <div class="brand-cn">子午咖啡</div>
+                <div class="brand-en">MERIDIAN COFFEE · ORDER TERMINAL</div>
+              </div>
+            </div>
+            <div class="topbar-right">
+              <div class="clock"><span class="clock-time" id="clockTime">--:--</span><span class="clock-date" id="clockDate">----</span></div>
+              <button class="icon-btn" id="btnHistory" title="历史点单记录"><svg class="icon"><use href="#i-history"/></svg></button>
+            </div>
+          </header>
+
+          <div class="body">
+            <nav class="cats" id="cats"></nav>
+
+            <section class="menu">
+              <div class="menu-head">
+                <div>
+                  <div class="eyebrow" id="catEyebrow">ESPRESSO / 01</div>
+                  <h1 class="menu-title" id="catTitle">浓缩咖啡</h1>
+                </div>
+                <div class="menu-count" id="menuCount"></div>
+              </div>
+              <div class="menu-grid" id="menuGrid"></div>
+            </section>
+
+            <aside class="order-panel" id="orderPanel">
+              <div class="op-handle"></div>
+              <div class="op-head">
+                <div class="op-eyebrow">ORDER LOG / 点单记录</div>
+                <div class="op-title">
+                  <h2>本单明细</h2>
+                  <span class="badge" id="opBadge">0</span>
+                  <button class="icon-btn op-close" id="opClose" title="收起"><svg class="icon"><use href="#i-chevron-right"/></svg></button>
+                </div>
+              </div>
+              <div class="op-table">
+                <div class="field-label">桌号 / 取餐名（选填）</div>
+                <input class="input" id="tableName" placeholder="例如：A3 桌 / 林先生" maxlength="24">
+              </div>
+              <div class="op-list" id="opList"></div>
+              <div class="op-foot">
+                <div class="summary"><span>合计杯数 / TOTAL CUPS</span><strong id="totalCups">0</strong><em>杯</em></div>
+                <div class="btn-row">
+                  <button class="btn btn-ghost" id="btnClear">清空</button>
+                  <button class="btn btn-primary" id="btnSubmit" disabled>确认下单<svg class="icon" style="width:15px;height:15px"><use href="#i-chevron-right"/></svg></button>
+                </div>
+                <div class="disclaimer"><svg class="icon"><use href="#i-info"/></svg><span>本单据仅记录品种、规格与数量，不涉及金额与支付。</span></div>
+              </div>
+            </aside>
+          </div>
+
+          <button class="dock" id="dock">
+            <svg class="icon"><use href="#i-list"/></svg>
+            <span class="dock-label">点单记录<span class="dock-sub" id="dockSub">还没有添加品种</span></span>
+            <svg class="icon dock-arrow"><use href="#i-chevron-up"/></svg>
+          </button>
+
+          <div class="scrim" id="scrim"></div>
+
+          <div class="modal-layer" id="modalLayer" data-view="">
+            <div class="modal" id="modalSpec">
+              <div class="modal-head">
+                <div>
+                  <div class="eyebrow">SELECT OPTIONS / 规格</div>
+                  <h3 id="specTitle">品种名称</h3>
+                  <div class="sub" id="specSub"></div>
+                </div>
+                <button class="icon-btn" data-close title="关闭"><svg class="icon"><use href="#i-x"/></svg></button>
+              </div>
+              <div class="modal-body" id="specBody"></div>
+              <div class="modal-foot">
+                <button class="btn btn-ghost" data-close>取消</button>
+                <button class="btn btn-primary" id="specAdd">加入点单记录<svg class="icon" style="width:15px;height:15px"><use href="#i-plus"/></svg></button>
+              </div>
+            </div>
+
+            <div class="modal" id="modalHistory">
+              <div class="modal-head">
+                <div>
+                  <div class="eyebrow">ARCHIVE / 历史记录</div>
+                  <h3>已下单记录</h3>
+                  <div class="sub" id="histSub"></div>
+                </div>
+                <button class="icon-btn" data-close title="关闭"><svg class="icon"><use href="#i-x"/></svg></button>
+              </div>
+              <div class="modal-body" id="histBody"></div>
+              <div class="modal-foot">
+                <button class="btn btn-ghost" id="histClear">清空历史</button>
+                <button class="btn btn-primary" data-close>返回点单</button>
+              </div>
+            </div>
+
+            <div class="modal" id="modalDone">
+              <div class="done-hero">
+                <svg class="icon"><use href="#i-check-circle"/></svg>
+                <div class="done-no" id="doneNo">A001</div>
+                <div class="done-sub" id="doneSub"></div>
+              </div>
+              <div class="done-body" id="doneBody"></div>
+              <div class="modal-foot">
+                <button class="btn btn-primary" id="doneClose">完成<svg class="icon" style="width:15px;height:15px"><use href="#i-check"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toast" id="toast"><svg class="icon"><use href="#i-check"/></svg><span id="toastText"></span></div>
+        </div>
+
+<script>
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const ic = (n, style='') => `<svg class="icon"${style ? ' style="'+style+'"' : ''}><use href="#i-${n}"/></svg>`;
+const p2 = n => String(n).padStart(2,'0');
+
+/* ---------------- 基础数据 ---------------- */
+const CATS = [
+  {id:'espresso', cn:'浓缩咖啡', en:'ESPRESSO'},
+  {id:'milk',     cn:'奶咖',     en:'MILK BASED'},
+  {id:'pourover', cn:'手冲单品', en:'POUR OVER'},
+  {id:'cold',     cn:'冷萃冰饮', en:'COLD BREW'},
+  {id:'tea',      cn:'非咖啡',   en:'NON-COFFEE'},
+  {id:'bakery',   cn:'轻食甜点', en:'BAKERY'}
+];
+const ALL_CAT = {id:'all', cn:'全部品种', en:'ALL ITEMS'};
+const NAV = [ALL_CAT, ...CATS];
+const OPTS = {
+  espresso:{temp:['热'],        size:['单份','双份'],   sugar:false},
+  milk:    {temp:['热','冰'],   size:['中杯','大杯'],   sugar:true },
+  pourover:{temp:['热'],        size:['单杯','分享壶'], sugar:false},
+  cold:    {temp:['冰'],        size:['中杯','大杯'],   sugar:true },
+  tea:     {temp:['热','冰'],   size:['中杯','大杯'],   sugar:true },
+  bakery:  {temp:[],            size:[],                sugar:false}
+};
+const ITEMS = [
+  {id:'e1',cat:'espresso',cn:'意式浓缩',en:'Espresso',desc:'双份拼配豆，25 秒萃取，油脂丰厚，尾韵带可可。',tags:['浓烈','短饮']},
+  {id:'e2',cat:'espresso',cn:'美式咖啡',en:'Americano',desc:'浓缩加热水，干净通透，保留豆子本身的果酸。',tags:['清爽','长饮']},
+  {id:'e3',cat:'espresso',cn:'玛琪雅朵',en:'Macchiato',desc:'一勺奶泡轻点浓缩，柔和但不失骨架。',tags:['奶泡','短饮']},
+  {id:'m1',cat:'milk',cn:'拿铁',en:'Caffè Latte',desc:'绵密蒸汽牛奶与浓缩，口感顺滑平衡。',tags:['牛奶','经典']},
+  {id:'m2',cat:'milk',cn:'卡布奇诺',en:'Cappuccino',desc:'等量浓缩、牛奶与厚奶泡，撒可可粉。',tags:['厚奶泡','经典']},
+  {id:'m3',cat:'milk',cn:'澳白',en:'Flat White',desc:'双份浓缩配薄奶泡，咖啡味更集中。',tags:['薄奶泡','浓郁']},
+  {id:'m4',cat:'milk',cn:'摩卡',en:'Mocha',desc:'浓缩、牛奶与黑巧，微苦回甘。',tags:['巧克力','甜感']},
+  {id:'p1',cat:'pourover',cn:'耶加雪菲',en:'Yirgacheffe',desc:'埃塞俄比亚水洗，茉莉、柑橘与红茶感。',tags:['花香','浅烘']},
+  {id:'p2',cat:'pourover',cn:'哥伦比亚慧兰',en:'Huila',desc:'中深烘，焦糖、坚果与圆润甜感。',tags:['焦糖','中烘']},
+  {id:'p3',cat:'pourover',cn:'肯尼亚 AA',en:'Kenya AA',desc:'明亮黑加仑酸质，层次分明，回甘悠长。',tags:['莓果','浅烘']},
+  {id:'c1',cat:'cold',cn:'经典冷萃',en:'Cold Brew',desc:'12 小时低温浸泡，低酸顺口，带巧克力尾韵。',tags:['低酸','慢萃']},
+  {id:'c2',cat:'cold',cn:'氮气冷萃',en:'Nitro',desc:'注入氮气，绵密气泡与奶油般的质地。',tags:['绵密','无糖']},
+  {id:'c3',cat:'cold',cn:'冰美式',en:'Iced Americano',desc:'浓缩加冰水，利落干净，适合午后。',tags:['清爽','无糖']},
+  {id:'t1',cat:'tea',cn:'抹茶拿铁',en:'Matcha Latte',desc:'宇治抹茶配蒸汽牛奶，微苦带海苔香。',tags:['抹茶','牛奶']},
+  {id:'t2',cat:'tea',cn:'热可可',en:'Hot Cocoa',desc:'高比例黑巧调制，浓稠不腻。',tags:['巧克力','热饮']},
+  {id:'t3',cat:'tea',cn:'洋甘菊茶',en:'Chamomile Tea',desc:'无咖啡因，花草香柔和，适合晚间。',tags:['无咖啡因','花草']},
+  {id:'b1',cat:'bakery',cn:'黄油可颂',en:'Butter Croissant',desc:'层层酥皮，现烤回温，麦香与发酵黄油。',tags:['现烤','酥皮']},
+  {id:'b2',cat:'bakery',cn:'巴斯克芝士',en:'Basque Cheesecake',desc:'焦香表层与流心内馅，微咸奶酪。',tags:['冷藏','甜点']},
+  {id:'b3',cat:'bakery',cn:'海盐卷',en:'Sea Salt Roll',desc:'外脆内软，海盐提味，越嚼越香。',tags:['现烤','咸香']}
+];
+
+const KEY = 'meridian_coffee_orders_v1';
+const Store = {
+  load(){
+    try { if(window.AndroidStore){ const r = JSON.parse(window.AndroidStore.load() || '[]'); if(Array.isArray(r)) return r; } } catch(e){}
+    try { const r = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(r) ? r : []; } catch(e){ return []; }
+  },
+  save(v){
+    const str = JSON.stringify(v);
+    try { if(window.AndroidStore){ window.AndroidStore.save(str); return; } } catch(e){}
+    try { localStorage.setItem(KEY, str); } catch(e){}
+  }
+};
+let orders = Store.load();
+let seq = orders.reduce((m,o) => Math.max(m, parseInt(String(o.no).replace(/\D/g,''),10) || 0), 0);
+const save = () => Store.save(orders);
+
+let activeCat = 'all';
+let current = [];
+let logId = 0;
+let clearArmed = false;
+let clearTimer = null;
+let toastTimer = null;
+let specCtx = null;
+
+/* ---------------- 渲染 ---------------- */
+function renderCats(){
+  $('#cats').innerHTML = NAV.map((c,i) => `
+    <button class="cat-btn${c.id===activeCat?' on':''}" data-cat="${c.id}">
+      <span class="cat-no">${i===0?'00':p2(i)}</span><span class="cat-cn">${c.cn}</span><span class="cat-en">${c.en}</span>
+    </button>`).join('');
+}
+function renderMenu(){
+  const isAll = activeCat === 'all';
+  const c = isAll ? ALL_CAT : CATS.find(x => x.id === activeCat);
+  const i = CATS.indexOf(c) + 1;
+  const list = isAll ? ITEMS : ITEMS.filter(x => x.cat === activeCat);
+  $('#catEyebrow').textContent = isAll ? `FULL MENU / ${ITEMS.length} ITEMS` : `${c.en} / ${p2(i)}`;
+  $('#catTitle').textContent = isAll ? '全部菜单' : c.cn;
+  $('#menuCount').textContent = `共 ${list.length} 个品种`;
+  $('#menuGrid').innerHTML = list.map((it,n) => {
+    const catTag = isAll ? `<span class="tag tag-cat">${(CATS.find(x=>x.id===it.cat)||{}).cn}</span>` : '';
+    return `
+    <article class="item">
+      <div class="item-no">${p2(n+1)}</div>
+      <div class="item-main">
+        <div class="item-name">${it.cn}<span class="item-en">${it.en}</span></div>
+        <p class="item-desc">${it.desc}</p>
+        <div class="item-tags">${catTag}${it.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+      <button class="add-btn" data-add="${it.id}" title="加入点单记录">${ic('plus')}</button>
+    </article>`;
+  }).join('');
+}
+function cups(){ return current.reduce((s,x) => s + x.qty, 0); }
+function renderLog(){
+  const list = $('#opList');
+  if(!current.length){
+    list.innerHTML = `<div class="empty">${ic('clipboard')}<p>还没有点单记录<br>从${$('#app').dataset.orient==='landscape'?'左侧':'上方'}选择品种开始</p></div>`;
+  } else {
+    list.innerHTML = current.map((x,n) => `
+      <div class="log-item">
+        <div class="log-no">${p2(n+1)}</div>
+        <div class="log-body">
+          <div class="log-name">${esc(x.name)}</div>
+          <div class="log-spec">${esc(x.spec || '默认规格')}</div>
+          ${x.note ? `<div class="log-note">备注：${esc(x.note)}</div>` : ''}
+          <div class="log-ctrl">
+            <div class="qty">
+              <button data-q="-1" data-id="${x.id}" title="减少">${ic('minus')}</button>
+              <span>${x.qty}</span>
+              <button data-q="1" data-id="${x.id}" title="增加">${ic('plus')}</button>
+            </div>
+            <button class="log-del" data-del="${x.id}" title="移除">${ic('trash')}</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+  const n = cups();
+  $('#opBadge').textContent = n;
+  $('#totalCups').textContent = n;
+  $('#btnSubmit').disabled = n === 0;
+  $('#dockSub').textContent = n ? `${current.length} 个品种 · 共 ${n} 杯` : '还没有添加品种';
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ---------------- 规格弹层 ---------------- */
+function optsRow(label, key, values, hint){
+  if(!values || !values.length) return '';
+  return `<div class="opt-group">
+    <div class="opt-label">${label}${hint?`<span>${hint}</span>`:''}</div>
+    <div class="seg-opts">${values.map(v=>`<button class="opt" data-k="${key}" data-v="${v}">${v}</button>`).join('')}</div>
+  </div>`;
+}
+function buildSpec(it){
+  const o = OPTS[it.cat];
+  let html = '';
+  html += optsRow('温度','temp',o.temp);
+  html += optsRow('规格','size',o.size);
+  html += optsRow('甜度','sugar',o.sugar ? ['无糖','少糖','正常'] : null);
+  if(!o.temp.length && !o.size.length){
+    html += `<div class="opt-group"><div class="opt-label">规格</div><div class="no-opt">该品种无需选择规格，可直接加入点单记录。</div></div>`;
+  }
+  html += `<div class="opt-group"><div class="opt-label">备注 <span>选填，最多 40 字</span></div>
+    <input class="input" id="specNote" placeholder="例如：少冰、外带、不加糖…" maxlength="40"></div>`;
+  html += `<div class="opt-group"><div class="opt-label">数量</div>
+    <div class="qty qty-lg"><button data-q="-1" title="减少">${ic('minus')}</button><span id="specQty">1</span><button data-q="1" title="增加">${ic('plus')}</button></div></div>`;
+  return html;
+}
+function updateSpecUI(){
+  $$('#specBody .opt').forEach(b => b.classList.toggle('on', specCtx[b.dataset.k] === b.dataset.v));
+  const q = $('#specQty'); if(q) q.textContent = specCtx.qty;
+}
+function openSpec(id){
+  const it = ITEMS.find(x => x.id === id); if(!it) return;
+  const o = OPTS[it.cat];
+  specCtx = {id, temp:o.temp[0]||'', size:o.size[0]||'', sugar:o.sugar?'无糖':'', note:'', qty:1};
+  $('#specTitle').textContent = it.cn;
+  $('#specSub').textContent = it.en + ' · ' + (CATS.find(c=>c.id===it.cat)||{}).cn;
+  $('#specBody').innerHTML = buildSpec(it);
+  updateSpecUI();
+  openModal('spec');
+}
+function addSpecToLog(){
+  if(!specCtx) return;
+  const it = ITEMS.find(x => x.id === specCtx.id); if(!it) return;
+  const noteEl = $('#specNote');
+  specCtx.note = noteEl ? noteEl.value.trim() : '';
+  const o = OPTS[it.cat];
+  const spec = [specCtx.temp, specCtx.size, o.sugar ? specCtx.sugar : ''].filter(Boolean).join(' · ');
+  const found = current.find(x => x.itemId === it.id && x.spec === spec && x.note === specCtx.note);
+  if(found) found.qty += specCtx.qty;
+  else current.push({id:++logId, itemId:it.id, name:it.cn, spec, note:specCtx.note, qty:specCtx.qty});
+  renderLog(); closeModal();
+  toast(`已加入 ${it.cn} × ${specCtx.qty}`);
+}
+
+/* ---------------- 模态 / 抽屉 ---------------- */
+function openModal(view, data){
+  if(view === 'history') renderHistory();
+  if(view === 'done') renderDone(data);
+  $('#app').classList.remove('panel-open');
+  $('#modalLayer').dataset.view = view;
+  $('#app').classList.add('modal-open');
+}
+function closeModal(){
+  $('#modalLayer').dataset.view = '';
+  $('#app').classList.remove('modal-open');
+}
+function closeOverlay(){
+  if($('#app').classList.contains('modal-open')) closeModal();
+  else $('#app').classList.remove('panel-open');
+}
+function toast(msg){
+  $('#toastText').textContent = msg;
+  $('#toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 1900);
+}
+
+/* ---------------- 历史 / 下单 ---------------- */
+const WEEK = ['日','一','二','三','四','五','六'];
+const fmtDate = d => `${d.getFullYear()}.${p2(d.getMonth()+1)}.${p2(d.getDate())}`;
+const fmtTime = d => `${p2(d.getHours())}:${p2(d.getMinutes())}`;
+function renderHistory(){
+  $('#histSub').textContent = `共 ${orders.length} 笔已下单记录 · 仅保存品种与规格`;
+  $('#histBody').innerHTML = orders.length ? orders.map(o => `
+    <div class="hist-item">
+      <div class="hist-top"><span class="hist-no">${o.no}</span><span class="hist-time">${o.time}</span></div>
+      <div class="hist-meta">${o.table ? '取餐 / 桌号：'+esc(o.table)+' · ' : ''}${o.cups} 杯 · ${o.items.length} 个品种</div>
+      <div class="hist-lines">${o.items.map(x=>`<div><b>${esc(x.name)}</b> × ${x.qty}　${esc(x.spec||'默认规格')}${x.note?' · '+esc(x.note):''}</div>`).join('')}</div>
+    </div>`).join('') : `<div class="empty">${ic('history')}<p>还没有已下单记录<br>确认下单后会归档到这里</p></div>`;
+}
+function renderDone(rec){
+  $('#doneNo').textContent = rec.no;
+  $('#doneSub').textContent = `${rec.time} · 已写入本机记录`;
+  $('#doneBody').innerHTML = `
+    ${rec.items.map(x=>`<div class="done-row"><span>${esc(x.name)} × ${x.qty}　<span style="color:var(--ink-3)">${esc(x.spec||'默认规格')}</span></span><span>${x.qty} 杯</span></div>`).join('')}
+    <div class="done-total"><span>合计杯数${rec.table?' · '+esc(rec.table):''}</span><strong>${rec.cups} 杯</strong></div>
+    <div class="note-box">${ic('info')}<span>本单据仅记录咖啡品种、规格与数量，不涉及金额计算、优惠与支付流程。</span></div>`;
+}
+function submitOrder(){
+  if(!current.length) return;
+  const now = new Date();
+  const rec = {
+    no: 'A' + String(++seq).padStart(3,'0'),
+    time: `${fmtDate(now)} ${fmtTime(now)}`,
+    table: $('#tableName').value.trim(),
+    cups: cups(),
+    items: current.map(x => ({...x}))
+  };
+  orders.unshift(rec); save();
+  current = []; $('#tableName').value = ''; renderLog();
+  openModal('done', rec);
+}
+
+/* ---------------- 设备预览 ---------------- */
+/* 真机：按实际屏幕方向自动切换横竖屏布局，不做缩放（1 CSS px = 1 dp） */
+function applyDevice(){
+  const w = window.innerWidth  || document.documentElement.clientWidth;
+  const h = window.innerHeight || document.documentElement.clientHeight;
+  const orient = w >= h * 1.05 ? 'landscape' : 'portrait';
+  const app = $('#app');
+  if(app.dataset.orient !== orient){
+    app.dataset.orient = orient;
+    app.classList.remove('panel-open');
+  }
+  renderLog();
+}
+let layoutTimer = null;
+function scheduleLayout(){ clearTimeout(layoutTimer); layoutTimer = setTimeout(applyDevice, 120); }
+
+/* ---------------- 事件绑定 ---------------- */
+$('#cats').addEventListener('click', e => {
+  const b = e.target.closest('[data-cat]'); if(!b) return;
+  activeCat = b.dataset.cat; renderCats(); renderMenu();
+});
+$('#menuGrid').addEventListener('click', e => {
+  const b = e.target.closest('[data-add]'); if(b) openSpec(b.dataset.add);
+});
+$('#opList').addEventListener('click', e => {
+  const d = e.target.closest('[data-del]');
+  if(d){ current = current.filter(x => String(x.id) !== d.dataset.del); renderLog(); return; }
+  const q = e.target.closest('[data-q]');
+  if(q){
+    const row = current.find(x => String(x.id) === q.dataset.id); if(!row) return;
+    row.qty += Number(q.dataset.q);
+    if(row.qty <= 0) current = current.filter(x => x !== row);
+    renderLog();
+  }
+});
+$('#specBody').addEventListener('click', e => {
+  const opt = e.target.closest('.opt');
+  if(opt){ specCtx[opt.dataset.k] = opt.dataset.v; updateSpecUI(); return; }
+  const q = e.target.closest('[data-q]');
+  if(q){ specCtx.qty = Math.max(1, Math.min(20, specCtx.qty + Number(q.dataset.q))); updateSpecUI(); }
+});
+$('#specAdd').addEventListener('click', addSpecToLog);
+$('#modalLayer').addEventListener('click', e => {
+  if(e.target.closest('[data-close]')) closeModal();
+});
+$('#btnSubmit').addEventListener('click', submitOrder);
+$('#doneClose').addEventListener('click', closeModal);
+$('#btnHistory').addEventListener('click', () => openModal('history'));
+$('#histClear').addEventListener('click', () => {
+  if(!orders.length) return;
+  orders = []; seq = 0; save(); renderHistory(); toast('历史记录已清空');
+});
+$('#btnClear').addEventListener('click', () => {
+  if(!current.length) return;
+  if(!clearArmed){
+    clearArmed = true; $('#btnClear').textContent = '确认清空';
+    clearTimer = setTimeout(() => { clearArmed = false; $('#btnClear').textContent = '清空'; }, 3000);
+    return;
+  }
+  clearTimeout(clearTimer); clearArmed = false; $('#btnClear').textContent = '清空';
+  current = []; renderLog(); toast('本单已清空');
+});
+$('#dock').addEventListener('click', () => $('#app').classList.toggle('panel-open'));
+$('#opClose').addEventListener('click', () => $('#app').classList.remove('panel-open'));
+$('#scrim').addEventListener('click', closeOverlay);
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeOverlay(); });
+/* Android 返回键：先关闭弹层 / 抽屉，再退出应用 */
+window.closeOverlayForBack = function(){
+  const app = $('#app');
+  if(app.classList.contains('modal-open')){ closeModal(); return true; }
+  if(app.classList.contains('panel-open')){ app.classList.remove('panel-open'); return true; }
+  return false;
+};
+window.addEventListener('resize', scheduleLayout);
+window.addEventListener('orientationchange', scheduleLayout);
+
+function tick(){
+  const d = new Date();
+  $('#clockTime').textContent = fmtTime(d);
+  $('#clockDate').textContent = `${fmtDate(d)} 周${WEEK[d.getDay()]}`;
+}
+
+renderCats(); renderMenu(); renderLog(); applyDevice(); tick(); setInterval(tick, 15000);
+</script>
+</body>
+</html>
